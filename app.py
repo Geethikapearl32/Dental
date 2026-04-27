@@ -282,8 +282,9 @@ def delete_expense(id):
     
 # ================= INVENTORY ROUTES =================
 
-@app.route("/inventory", methods=["GET", "POST"])
+@app.route("/inventory")
 def inventory():
+    return "Inventory route working"
     conn = db()
     cur = conn.cursor()
 
