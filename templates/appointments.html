@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .entry-card {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        margin-bottom: 20px;
+    }
+    .form-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-end;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-size: 0.8em; font-weight: bold; color: #555; }
+    .form-group input, .form-group select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    
+    .table-container { background: white; border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6; }
+    .table-header { background: #1a237e; color: white; padding: 10px 15px; font-weight: bold; }
+    
+    #appointmentTable { width: 100%; border-collapse: collapse; font-size: 0.95em; }
+    #appointmentTable th, #appointmentTable td { 
+        padding: 12px; 
+        border: 1px solid #dee2e6; 
+        text-align: left; 
+    }
+    #appointmentTable tbody tr:hover { background-color: #f1f3f5; }
+    
+    .btn-action { border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9em; transition: 0.2s; }
+    .btn-action:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* Grouped Search styling */
+    .search-group { display: flex; align-items: stretch; }
+    .search-input { 
+        width: 300px; 
+        padding: 9px; 
+        border: 1px solid #ccc; 
+        border-radius: 4px 0 0 4px; 
+        border-right: none; 
+        outline: none; 
+    }
+    .search-btn { 
+        background: #1a237e; 
+        color: white; 
+        border-radius: 0 4px 4px 0; 
+        padding: 0 15px; 
+        display: flex; 
+        align-items: center; 
+        gap: 5px; 
+    }
+
+    /* Highlight class for search results */
+    .search-highlight {
+        background-color: #fff3cd !important; 
+    }
+</style>
+
+<h2>Appointment Management</h2>
+
+<div class="entry-card">
+    <form method="POST" class="form-grid">
+        <div class="form-group">
+            <label>Patient ID</label>
+            <input name="pid" placeholder="ID (optional)" style="width: 100px;">
+        </div>
+        <div class="form-group">
+            <label>Patient Name</label>
+            <input name="name" placeholder="Enter Full Name" required style="width: 200px;">
+        </div>
+        <div class="form-group">
+            <label>Phone</label>
+            <input name="phone" placeholder="Contact No." style="width: 140px;">
+        </div>
+        <div class="form-group">
+            <label>Date</label>
+            <input name="date" type="date" id="appointmentDate" required style="width: 150px;">
+        </div>
+        
+        <div class="form-group">
+            <label>Time (12hr)</label>
+            <div style="border: 1px solid #ccc; padding: 7px; border-radius: 4px; background: white; display: flex; align-items: center; gap: 4px;">
+                <select name="h12" required style="border:none; padding:0; background:transparent;">
+                    {% for h in range(1, 13) %}
+                        <option value="{{ h }}">{{ h }}</option>
+                    {% endfor %}
+                </select>
+                <span>:</span>
+                <select name="m12" required style="border:none; padding:0; background:transparent;">
+                    {% for m in range(0, 60, 5) %}
+                        <option value="{{ '%02d' % m }}">{{ '%02d' % m }}</option>
+                    {% endfor %}
+                </select>
+                <select name="ampm" required style="border:none; padding:0; background:transparent; font-weight: bold;">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Status</label>
+            <select name="status" style="width: 130px;">
+                <option value="Confirmed">Confirmed</option>
+                <option value="Cancelled">Cancelled</option>
+                <option value="Rescheduled">Rescheduled</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn-action" style="background: #28a745; color: white;">Add Appointment</button>
+    </form>
+</div>
+
+<hr>
+
+<div style="margin-bottom: 15px; display:flex; gap:10px; align-items:center; flex-wrap: wrap;">
+    
+    <div class="search-group">
+        <input 
+            type="text" 
+            id="search" 
+            placeholder="Search by name, ID, or phone..."
+            class="search-input"
+            onkeyup="if(event.key === 'Enter') searchTable()"
+        >
+        <button onclick="searchTable()" class="btn-action search-btn">
+            🔍 Search
+        </button>
+    </div>
+    
+    <button onclick="resetSearch()" class="btn-action" style="background:#6c757d; color:white;">Reset</button>
+
+    <div style="flex-grow: 1;"></div>
+    
+    <button onclick="changeStatus('cancel')" class="btn-action" style="background:orange; color:white;">Cancel</button>
+    <button onclick="changeStatus('reschedule')" class="btn-action" style="background:blue; color:white;">Reschedule</button>
+    <button onclick="changeStatus('delete')" class="btn-action" style="background:red; color:white;">Delete Selected</button>
+</div>
+
+<div class="table-container">
+    <div class="table-header">Scheduled Appointments</div>
+    <table id="appointmentTable">
+        <thead>
+            <tr style="background: #f1f3f5;">
+                <th style="width: 50px;">#</th>
+                <th>Patient ID</th>
+                <th>Name</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Phone</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in rows %}
+            <tr onclick="selectRow(this, '{{ r[0] }}')" style="cursor:pointer;">
+                <td style="font-weight: bold;">{{ loop.index }}</td>
+                <td>{{ r[1] or 'None' }}</td>
+                <td>{{ r[2] }}</td>
+                <td>{{ r[3] }}</td>
+                <td>{{ r[4] }}</td>
+                <td>{{ r[5] }}</td>
+                <td style="font-weight: bold; color: {% if r[6]=='Cancelled' %}red{% elif r[6]=='Rescheduled' %}blue{% else %}green{% endif %};">
+                    {{ r[6] }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.getElementById('appointmentDate').valueAsDate = new Date();
+
+let selectedId = null;
+
+function selectRow(row, id) {
+    document.querySelectorAll("#appointmentTable tbody tr").forEach(r => {
+        r.style.backgroundColor = "";
+        r.classList.remove('search-highlight');
+    });
+    row.style.backgroundColor = "#d1e7ff";
+    selectedId = id; // Continues using actual DB ID for logic
+}
+
+function changeStatus(action) {
+    if (!selectedId) {
+        alert("Please select an appointment from the table first!");
+        return;
+    }
+
+    let url = "";
+    if (action === 'cancel') {
+        if(confirm("Cancel this appointment?")) url = "/cancel_appointment/" + selectedId;
+    } else if (action === 'reschedule') {
+        if(confirm("Mark as Rescheduled?")) url = "/reschedule_appointment/" + selectedId;
+    } else if (action === 'delete') {
+        if(confirm("Permanently delete this record?")) url = "/delete_appointment/" + selectedId;
+    }
+
+    if (url) window.location.href = url;
+}
+
+function searchTable() {
+    let input = document.getElementById("search").value.toLowerCase();
+    let rows = document.querySelectorAll("#appointmentTable tbody tr");
+    
+    rows.forEach((row) => {
+        let text = row.innerText.toLowerCase();
+        row.classList.remove('search-highlight');
+        
+        if (input !== "" && text.includes(input)) {
+            row.style.display = ""; 
+            row.classList.add('search-highlight'); 
+        } else if (input === "") {
+            row.style.display = ""; 
+        } else {
+            row.style.display = "none"; 
+        }
+    });
+}
+
+function resetSearch() {
+    document.getElementById("search").value = "";
+    searchTable();
+}
+</script>
+{% endblock %}

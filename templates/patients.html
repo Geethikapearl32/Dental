@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .entry-card { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 20px; }
+    .form-grid { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-size: 0.8em; font-weight: bold; color: #555; }
+    .form-group input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    
+    .table-container { background: white; border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6; }
+    .table-header { background: #1a237e; color: white; padding: 10px 15px; font-weight: bold; }
+    
+    #patientTable { width: 100%; border-collapse: collapse; font-size: 0.95em; }
+    #patientTable th, #patientTable td { padding: 10px; border: 1px solid #dee2e6; text-align: left; }
+    #patientTable thead tr { background: #f1f3f5; }
+    
+    .btn-action { border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+    .btn-action:hover { opacity: 0.9; }
+    
+    /* Section Styles */
+    .edit-section { background: #fff3cd; border-color: #ffeeba; display: none; }
+    
+    /* Summary Styling */
+    .summary-box { background: #e9ecef; padding: 10px; border-radius: 5px; text-align: center; flex: 1; }
+    .summary-box b { display: block; font-size: 1.1em; color: #1a237e; }
+    
+    .doc-bal-card { 
+        background: #fdfdfe; 
+        border: 1px solid #dee2e6; 
+        padding: 10px; 
+        border-radius: 6px; 
+        margin-bottom: 8px; 
+        border-left: 5px solid #1a237e;
+    }
+
+    /* Fixed Layout Wrapper */
+    .layout-wrapper {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+        width: 100%;
+    }
+    .main-table-area { flex: 2; min-width: 0; }
+    .side-history-area { 
+        flex: 1.2; 
+        display: none; 
+        background: white; 
+        border: 1px solid #dee2e6; 
+        border-radius: 8px; 
+        padding: 15px; 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+        position: sticky;
+        top: 20px;
+    }
+
+    /* Fixed Button Visibility */
+    .sort-btn {
+        background: #f1f3f5;
+        border: 1px solid #ccc;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 0.85em;
+        cursor: pointer;
+        color: #000000 !important; /* Forces black text */
+        font-weight: 600;
+        transition: 0.2s;
+    }
+    .sort-btn:hover { background: #e2e6ea; border-color: #999; }
+</style>
+
+<h2>Patient Management</h2>
+
+<div class="entry-card">
+    <small><b>+ Add New Patient</b></small>
+    <form method="POST" class="form-grid" id="addPatientForm">
+        <div class="form-group">
+            <label>Reg. Date</label>
+            <input name="date" type="date" class="default-date" required style="width: 140px;">
+        </div>
+        <div class="form-group">
+            <label>Patient ID</label>
+            <input name="pid" id="new_pid" placeholder="Auto ID" style="width: 90px;">
+        </div>
+        <div class="form-group">
+            <label>Full Name</label>
+            <input name="name" placeholder="Enter Name" required style="width: 180px;">
+        </div>
+        <div class="form-group">
+            <label>Age</label>
+            <input name="age" placeholder="Age" style="width: 55px;">
+        </div>
+        <div class="form-group">
+            <label>Gender</label>
+            <input name="gender" placeholder="M/F" style="width: 70px;">
+        </div>
+        <div class="form-group">
+            <label>Phone</label>
+            <input name="phone" placeholder="Phone" style="width: 130px;">
+        </div>
+        <div class="form-group">
+            <label>Place</label>
+            <input name="place" placeholder="City/Area" style="width: 130px;">
+        </div>
+        <button type="submit" class="btn-action" style="background: #28a745; color: white;">Add Patient</button>
+        <button type="button" onclick="clearPatientForm()" class="btn-action" style="background: #6c757d; color: white;">Clear</button>
+    </form>
+</div>
+
+<div id="editCard" class="entry-card edit-section">
+    <small><b>✏️ Edit Patient Record: <span id="editingNameDisplay" style="color: #856404;"></span></b></small>
+    <form action="/edit_patient" method="POST" class="form-grid">
+        <input type="hidden" name="old_pid" id="edit_old_pid">
+        <div class="form-group">
+            <label>Reg. Date</label>
+            <input name="date" type="date" id="edit_date" style="width: 140px;">
+        </div>
+        <div class="form-group">
+            <label>Patient ID</label>
+            <input name="pid" id="edit_pid" style="width: 90px;">
+        </div>
+        <div class="form-group">
+            <label>Full Name</label>
+            <input name="name" id="edit_name" required style="width: 180px;">
+        </div>
+        <div class="form-group">
+            <label>Age</label>
+            <input name="age" id="edit_age" style="width: 55px;">
+        </div>
+        <div class="form-group">
+            <label>Gender</label>
+            <input name="gender" id="edit_gender" style="width: 70px;">
+        </div>
+        <div class="form-group">
+            <label>Phone</label>
+            <input name="phone" id="edit_phone" style="width: 130px;">
+        </div>
+        <div class="form-group">
+            <label>Place</label>
+            <input name="place" id="edit_place" style="width: 130px;">
+        </div>
+        <button type="submit" class="btn-action" style="background: #ffc107; color: black;">Save Changes</button>
+        <button type="button" onclick="closeEdit()" class="btn-action" style="background: #6c757d; color: white;">Cancel</button>
+    </form>
+</div>
+
+<div class="layout-wrapper">
+    
+    <div class="main-table-area">
+        <div style="margin-bottom: 15px; display:flex; gap:10px; align-items:center;">
+            <small><b>Sort Table:</b></small>
+            <button onclick="sortTable(1, true)" class="sort-btn">By ID</button>
+            <button onclick="sortTable(3, true)" class="sort-btn">By Age</button>
+            <button onclick="sortTable(4)" class="sort-btn">By Gender</button>
+            <button onclick="sortTable(0)" class="sort-btn">By Date</button>
+        </div>
+
+        <div style="margin-bottom: 10px; display:flex; gap:8px; flex-wrap: wrap;">
+            <input type="text" id="search" placeholder="Search by name, ID or phone..." onkeyup="searchPatient()" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px; min-width: 200px;">
+            <button onclick="toggleHistory()" class="btn-action" style="background: #1a237e; color: white;">📁 View History</button>
+            <button onclick="showEdit()" class="btn-action" style="background: #ffc107; color: black;">✏️ Edit Patient</button>
+            <button onclick="deletePatient()" class="btn-action" style="background:#dc3545; color:white;">Delete</button>
+        </div>
+
+        <div class="table-container">
+            <div class="table-header">Patient Records</div>
+            <table id="patientTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Gender</th>
+                        <th>Phone</th>
+                        <th>Place</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rows %}
+                    <tr onclick='selectPatient({{ r | tojson }}, this)' style="cursor:pointer;">
+                        <td>{{ r.date }}</td>
+                        <td style="font-weight: bold;">{{ r.patient_id }}</td>
+                        <td>{{ r.name }}</td>
+                        <td>{{ r.age }}</td>
+                        <td>{{ r.gender }}</td>
+                        <td>{{ r.phone }}</td>
+                        <td>{{ r.place }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="historyPanel" class="side-history-area">
+        <h3 id="displayPatientName" style="margin-top:0; color:#1a237e; border-bottom: 2px solid #eee; padding-bottom: 10px;">Patient History</h3>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <div class="summary-box">Total <b id="sumCost">₹0</b></div>
+            <div class="summary-box">Paid <b id="sumPaid">₹0</b></div>
+            <div class="summary-box">Balance <b id="sumBal" style="color:#dc3545;">₹0</b></div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <small style="text-transform: uppercase; color: #666; letter-spacing: 1px;"><b>Doctor Summary:</b></small>
+            <div id="docSummaryList" style="margin-top: 10px;"></div>
+        </div>
+
+        <table style="width:100%; border-collapse: collapse; font-size: 0.85em;">
+            <thead style="background:#f1f3f5;">
+                <tr>
+                    <th style="padding:8px; border-bottom:1px solid #ddd;">Date</th>
+                    <th style="padding:8px; border-bottom:1px solid #ddd;">Doctor</th>
+                    <th style="padding:8px; border-bottom:1px solid #ddd;">Treatment</th>
+                    <th style="padding:8px; border-bottom:1px solid #ddd;">Cost</th>
+                </tr>
+            </thead>
+            <tbody id="histBody"></tbody>
+        </table>
+        
+        <form action="/upload_document" method="POST" enctype="multipart/form-data" style="margin-top:25px; border-top: 1px solid #eee; padding-top:15px;">
+            <small><b>Attach report/image to latest record:</b></small><br>
+            <input type="hidden" name="pid" id="uploadPid">
+            <input type="file" name="file" required style="margin: 10px 0; font-size: 0.9em;">
+            <button type="submit" class="btn-action" style="background:#17a2b8; color:white; width:100%;">Upload Document</button>
+        </form>
+    </div>
+</div>
+
+<script>
+// Numerical and Alphabetical Sorting
+function sortTable(n, isNumeric = false) {
+    let table = document.getElementById("patientTable");
+    let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+    switching = true;
+    dir = "asc"; 
+    while (switching) {
+        switching = false;
+        rows = table.rows;
+        for (i = 1; i < (rows.length - 1); i++) {
+            shouldSwitch = false;
+            x = rows[i].getElementsByTagName("TD")[n].innerText.toLowerCase();
+            y = rows[i + 1].getElementsByTagName("TD")[n].innerText.toLowerCase();
+            
+            if (isNumeric) {
+                x = parseFloat(x.replace(/[^\d.]/g, '')) || 0;
+                y = parseFloat(y.replace(/[^\d.]/g, '')) || 0;
+            }
+            if (dir == "asc") {
+                if (x > y) { shouldSwitch = true; break; }
+            } else if (dir == "desc") {
+                if (x < y) { shouldSwitch = true; break; }
+            }
+        }
+        if (shouldSwitch) {
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+            switchcount++;
+        } else if (switchcount == 0 && dir == "asc") {
+            dir = "desc";
+            switching = true;
+        }
+    }
+}
+
+// Date formatting and Initial Load
+function formatDateDisplay(dateStr) {
+    if (!dateStr || !dateStr.includes('-')) return dateStr;
+    const parts = dateStr.split('-');
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll('.default-date').forEach(el => el.valueAsDate = new Date());
+    document.querySelectorAll("#patientTable tbody tr").forEach(row => {
+        const dateCell = row.cells[0];
+        dateCell.innerText = formatDateDisplay(dateCell.innerText);
+    });
+});
+
+let selectedData = null;
+let selectedPid = null;
+let selectedName = null;
+
+function selectPatient(data, row) {
+    document.querySelectorAll("#patientTable tbody tr").forEach(r => r.style.backgroundColor = "");
+    row.style.backgroundColor = "#d1e7ff";
+    selectedData = data;
+    selectedPid = data.patient_id;
+    selectedName = data.name;
+    document.getElementById("uploadPid").value = data.patient_id;
+}
+
+function toggleHistory() {
+    if (!selectedPid) { alert("Please select a patient first."); return; }
+    let panel = document.getElementById("historyPanel");
+    
+    if (panel.style.display === "block") {
+        panel.style.display = "none";
+    } else {
+        panel.style.display = "block";
+        document.getElementById("displayPatientName").innerText = selectedName;
+        
+        fetch("/get_patient_history/" + selectedPid)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("sumCost").innerText = "₹" + (data.total_cost || 0);
+                document.getElementById("sumPaid").innerText = "₹" + (data.total_paid || 0);
+                document.getElementById("sumBal").innerText = "₹" + (data.balance || 0);
+
+                // Logic to calculate visits count from the treatment table (data.history)
+                let visitCounts = {};
+                data.history.forEach(h => {
+                    let dName = h.doc_name || 'N/A';
+                    visitCounts[dName] = (visitCounts[dName] || 0) + 1;
+                });
+
+                let docHtml = "";
+                if (data.doc_summary && data.doc_summary.length > 0) {
+                    data.doc_summary.forEach(ds => {
+                        let balColor = ds.balance > 0 ? "#dc3545" : "#28a745";
+                        let calculatedVisits = visitCounts[ds.doc_name] || 0;
+                        
+                        docHtml += `
+                        <div class="doc-bal-card" style="font-size: 0.85em;">
+                            <div style="display:flex; justify-content: space-between; border-bottom: 1px solid #eee; margin-bottom: 4px; padding-bottom: 2px;">
+                                <b>${ds.doc_name}</b>
+                                <span style="color:${balColor}; font-weight:bold;">Bal: ₹${ds.balance}</span>
+                            </div>
+                            <div style="display:flex; justify-content: space-between; color: #555;">
+                                <span>Visits: <b>${calculatedVisits}</b></span>
+                                <span>Paid: <b style="color: #28a745;">₹${ds.total_paid || 0}</b></span>
+                            </div>
+                        </div>`;
+                    });
+                } else { docHtml = "<p style='font-size:0.85em; color:#999;'>No doctor records found.</p>"; }
+                document.getElementById("docSummaryList").innerHTML = docHtml;
+
+                let rows = "";
+                data.history.forEach(h => {
+                    rows += `<tr style="border-bottom:1px solid #eee;">
+                        <td>${formatDateDisplay(h.date)}</td>
+                        <td>${h.doc_name || 'N/A'}</td>
+                        <td>${h.treatment}</td>
+                        <td>₹${h.cost}</td>
+                    </tr>`;
+                });
+                document.getElementById("histBody").innerHTML = rows || "<tr><td colspan='4'>No records</td></tr>";
+            });
+    }
+}
+
+function searchPatient() {
+    let input = document.getElementById("search").value.toLowerCase();
+    document.querySelectorAll("#patientTable tbody tr").forEach(row => { 
+        row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none"; 
+    });
+}
+
+function clearPatientForm() { document.getElementById("addPatientForm").reset(); }
+function closeEdit() { document.getElementById("editCard").style.display = "none"; }
+function showEdit() {
+    if (!selectedData) return alert("Select patient first.");
+    document.getElementById("editCard").style.display = "block";
+    document.getElementById("edit_pid").value = selectedData.patient_id;
+    document.getElementById("edit_name").value = selectedData.name;
+    document.getElementById("edit_old_pid").value = selectedData.patient_id;
+}
+function deletePatient() {
+    // Check if a patient was clicked in the table
+    if (!selectedPid) {
+        alert("Please select a patient from the list first.");
+        return;
+    }
+
+    if (confirm("Are you sure you want to delete " + selectedName + "? All medical records will be lost.")) {
+        fetch("/delete_patient/" + selectedPid, {
+            method: "POST"
+        })
+        .then(response => {
+            if (response.ok) {
+                // Refresh the table immediately
+                window.location.reload();
+            } else {
+                alert("Failed to delete. Check if you are logged in as Admin.");
+            }
+        })
+        .catch(err => alert("Network error. Could not reach the server."));
+    }
+}
+
+</script>
+{% endblock %}

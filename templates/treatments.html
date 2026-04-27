@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .entry-card {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        margin-bottom: 25px;
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        align-items: end;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-size: 0.85em; font-weight: bold; color: #555; }
+    .form-group input, .form-group select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    .readonly-box { background-color: #e9ecef; color: #495057; }
+    
+    .table-container { background: white; border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6; }
+    .table-header { background: #1a237e; color: white; padding: 12px; font-weight: bold; }
+    .btn-add { background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    .btn-add:hover { background: #218838; }
+
+    /* Delete Button Styling */
+    .btn-delete {
+        color: #ef4444;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9em;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+    .btn-delete:hover {
+        background: #fee2e2;
+    }
+</style>
+
+<h2>Patient Treatments</h2>
+
+<div class="entry-card">
+    <form method="POST" class="form-grid">
+        <div class="form-group">
+            <label>Patient ID</label>
+            <input name="pid" id="pid" onkeyup="autofill()" placeholder="Type ID..." required>
+        </div>
+
+        <div class="form-group">
+            <label>Name</label>
+            <input id="name" class="readonly-box" readonly placeholder="Auto-filled">
+        </div>
+
+        <div class="form-group">
+            <label>Phone</label>
+            <input id="phone" class="readonly-box" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Doctor</label>
+            <select name="doctor" required>
+                <option value="">Select Doctor</option>
+                {% for d in doctors %}
+                <option value="{{ d[0] }} - {{ d[1] }}">{{ d[0] }} - {{ d[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Treatment</label>
+            <input name="desc" placeholder="e.g. Extraction" required>
+        </div>
+
+        <div class="form-group">
+            <label>Cost</label>
+            <input name="cost" type="number" placeholder="0" required>
+        </div>
+
+        <div class="form-group">
+            <label>Paid</label>
+            <input name="paid" type="number" placeholder="0" required>
+        </div>
+
+        <div class="form-group">
+            <label>Mode</label>
+            <select name="mode">
+                <option value="cash">Cash</option>
+                <option value="online">Online</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Date</label>
+            <input type="date" name="date" required id="currentDate">
+        </div>
+
+        <button type="submit" class="btn-add">Add Record</button>
+    </form>
+</div>
+
+<div class="table-container">
+    <div class="table-header">Treatment History</div>
+    <table class="table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background: #f1f3f5; text-align: left; border-bottom: 2px solid #dee2e6;">
+                <th style="padding: 12px; border: 1px solid #dee2e6;">Date</th>
+                <th style="border: 1px solid #dee2e6;">Patient Name</th>
+                <th style="border: 1px solid #dee2e6;">Doctor</th>
+                <th style="border: 1px solid #dee2e6;">Treatment</th>
+                <th style="border: 1px solid #dee2e6;">Cost</th>
+                <th style="border: 1px solid #dee2e6;">Paid</th>
+                <th style="border: 1px solid #dee2e6;">Balance</th>
+                <th style="border: 1px solid #dee2e6;">Mode</th>
+                <th style="border: 1px solid #dee2e6;">Action</th> </tr>
+        </thead>
+        <tbody id="treatmentTableBody">
+            {% for r in rows %}
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 12px; border: 1px solid #dee2e6;">{{ r[9] }}</td>
+                <td style="font-weight: bold; border: 1px solid #dee2e6;">{{ r[2] }}</td>
+                <td style="border: 1px solid #dee2e6;">{{ r[4] }}</td>
+                <td style="border: 1px solid #dee2e6;">
+                    <span style="background: #e7f5ff; color: #1971c2; padding: 2px 8px; border-radius: 10px; font-size: 0.9em;">{{ r[5] }}</span>
+                </td>
+                <td style="border: 1px solid #dee2e6;">₹{{ r[6] }}</td>
+                <td style="color: green; border: 1px solid #dee2e6;">₹{{ r[7] }}</td>
+                <td style="color: red; font-weight: bold; border: 1px solid #dee2e6;">
+                    ₹{{ (r[6]|int) - (r[7]|int) }}
+                </td>
+                <td style="border: 1px solid #dee2e6;">
+                    <small style="text-transform: uppercase; color: #666;">{{ r[8] }}</small>
+                </td>
+                <td style="border: 1px solid #dee2e6; text-align: center;">
+                    <a href="/delete_treatment/{{ r[0] }}" 
+                       class="btn-delete"
+                       onclick="return confirm('Permanently delete this treatment record?')">
+                       Delete
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+// Format date for display
+function formatDateDisplay(dateStr) {
+    if (!dateStr || !dateStr.includes('-')) return dateStr;
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    // Set default date picker to today
+    document.getElementById('currentDate').valueAsDate = new Date();
+
+    // Reformat all dates in the table body
+    const tableRows = document.querySelectorAll("#treatmentTableBody tr");
+    tableRows.forEach(row => {
+        const dateCell = row.cells[0];
+        dateCell.innerText = formatDateDisplay(dateCell.innerText);
+    });
+});
+
+function autofill() {
+    let value = document.getElementById("pid").value;
+    if (!value) return;
+
+    fetch("/get_patient_full/" + value)
+    .then(res => res.json())
+    .then(data => {
+        if (data.name) {
+            document.getElementById("name").value = data.name;
+            document.getElementById("phone").value = data.phone;
+        } else {
+            document.getElementById("name").value = "Not Found";
+        }
+    });
+}
+</script>
+{% endblock %}

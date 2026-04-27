@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+    .stat-card { background: white; padding: 15px; border-radius: 10px; border-left: 5px solid #3b82f6; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .stat-card h4 { margin: 0; color: #64748b; font-size: 0.85em; text-transform: uppercase; }
+    .stat-card p { margin: 5px 0 0; font-size: 1.1em; font-weight: 600; color: #1e293b; }
+    .profit { border-left-color: #10b981; background: #ecfdf5; }
+    .expense { border-left-color: #ef4444; }
+</style>
+
+<h2>Financial Billing & Reports</h2>
+
+<div class="stats-container">
+    <div class="stat-card">
+        <h4>Total Received</h4>
+        <p>Cash: ₹{{ s.total_cash }}</p>
+        <p>Online: ₹{{ s.total_online }}</p>
+    </div>
+    <div class="stat-card">
+        <h4>Weekly (Last 7 Days)</h4>
+        <p>Cash: ₹{{ s.week_cash }}</p>
+        <p>Online: ₹{{ s.week_online }}</p>
+    </div>
+    <div class="stat-card">
+        <h4>Monthly (This Month)</h4>
+        <p>Cash: ₹{{ s.month_cash }}</p>
+        <p>Online: ₹{{ s.month_online }}</p>
+    </div>
+    <div class="stat-card expense">
+        <h4>Total Expenses</h4>
+        <p>Cash: ₹{{ s.exp_cash }}</p>
+        <p>Online: ₹{{ s.exp_online }}</p>
+    </div>
+    <div class="stat-card profit">
+        <h4>Net Profit</h4>
+        <p style="font-size: 1.5em; color: #059669;">₹{{ s.net_profit }}</p>
+    </div>
+</div>
+
+<div class="card" style="display:block; margin-bottom:20px; padding: 15px;">
+    <form method="GET" style="display:flex; gap:15px; align-items:center; background:none; box-shadow:none; padding:0;">
+        <label><b>Search by Date:</b></label>
+        <input type="date" name="search_date" value="{{ search_date }}">
+        <button type="submit">Search</button>
+        <a href="/billing" style="text-decoration:none; color:#64748b; font-size:0.9em; margin-left: 10px;">Clear Filter</a>
+    </form>
+</div>
+
+<div class="table-container">
+    <table class="table" id="billingTable">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Source (Patient Name)</th>
+                <th>Amount</th>
+                <th>Mode</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in rows %}
+            <tr>
+                <td>{{ r.date }}</td>
+                <td style="font-weight:600; color:#1a237e;">{{ r.patient_name }}</td>
+                <td style="font-weight:600;">₹{{ r.amount }}</td>
+                <td>
+                    <span style="padding:4px 8px; border-radius:15px; font-size:0.85em; background: {% if r.mode=='cash' %}#fef3c7; color:#92400e;{% else %}#dbeafe; color:#1e40af;{% endif %}">
+                        {{ r.mode|upper }}
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+// Logic to format database date (YYYY-MM-DD) to display format (DD-MM-YYYY)
+function formatDate(s) {
+    if (!s || !s.includes('-')) return s;
+    const p = s.split('-');
+    return `${p[2]}-${p[1]}-${p[0]}`;
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    // Automatically reformat dates in the first column of the table
+    document.querySelectorAll("#billingTable tbody tr").forEach(row => {
+        row.cells[0].innerText = formatDate(row.cells[0].innerText);
+    });
+});
+</script>
+{% endblock %}

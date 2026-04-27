@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Inventory Management</h2>
+
+{% if low_stock %}
+<div style="background: #fee2e2; border-left: 5px solid #ef4444; padding: 15px; margin-bottom: 20px; border-radius: 8px;">
+    <h4 style="color: #991b1b; margin-top: 0;">⚠️ Low Stock Alert</h4>
+    <ul style="color: #991b1b;">
+        {% for item in low_stock %}
+            <li><strong>{{ item.item_name }}</strong> is at {{ item.quantity }} {{ item.unit }} (Min Level: {{ item.min_level }})</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<form method="POST" style="margin-bottom: 30px;">
+    <h4>Add New Item</h4>
+    <input type="text" name="item_name" placeholder="Item Name" required>
+    <input type="text" name="unit" placeholder="Unit (e.g. Pkt, Box)" required>
+    <input type="number" name="quantity" placeholder="Quantity" required>
+    <input type="number" name="min_level" placeholder="Min Level" required>
+    <input type="text" name="notes" placeholder="Notes">
+    <button type="submit">Add Item</button>
+</form>
+
+<div class="table-container">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>SLno</th>
+                <th>Item Name</th>
+                <th>Unit</th>
+                <th>Quantity</th>
+                <th>Min Level</th>
+                <th>Notes</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr style="{{ 'background-color: #fff1f2;' if item.quantity <= item.min_level else '' }}">
+                <td>{{ loop.index }}</td>
+                <td>{{ item.item_name }}</td>
+                <td>{{ item.unit }}</td>
+                <td>
+                    <form action="/update_stock/{{ item.id }}" method="POST" style="box-shadow:none; padding:0; background:transparent; display:inline;">
+                        <input type="number" name="quantity" value="{{ item.quantity }}" style="width: 60px; margin:0;">
+                        <button type="submit" style="padding: 5px 10px; font-size: 12px;">Update</button>
+                    </form>
+                </td>
+                <td>{{ item.min_level }}</td>
+                <td>{{ item.notes }}</td>
+                <td>
+                    {% set po_message = "Hi, I would like to place a Purchase Order for: " ~ item.item_name ~ ". Current stock is " ~ item.quantity ~ " " ~ item.unit ~ "." %}
+                    <a href="https://wa.me/?text={{ po_message|urlencode }}" target="_blank" 
+                       style="background: #25D366; color: white; padding: 5px 10px; border-radius: 5px; text-decoration: none; font-size: 12px;">
+                       WhatsApp PO
+                    </a>
+                    <a href="/delete_inventory/{{ item.id }}" onclick="return confirm('Delete this item?')" style="color: #ef4444; margin-left: 10px;">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dental Pro</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* Stylish Professional Font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --primary-navy: #0f172a;
+            --text-main: #1e293b; /* Stylish dark slate instead of pure black/white */
+            --text-muted: #64748b;
+            --accent-blue: #0284c7;
+        }
+
+         body {
+   margin:0;
+   font-family: 'Inter', sans-serif; /* Cleaner, more professional than Poppins */
+   background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); /* Softer gray/blue gradient */
+   color: var(--text-main);
+} 
+
+       /* Sidebar */
+       .sidebar {
+           width:230px;
+           height:100vh;
+           position:fixed;
+           background:#0f172a;
+           color:white;
+           padding:20px;
+           z-index: 1000;
+       }
+
+       .sidebar h2 {
+           margin-bottom:30px;
+       }
+
+       .sidebar a {
+           display:block;
+           padding:12px;
+           margin:4px 0;
+           color:#94a3b8; /* Muted stylish text */
+           text-decoration:none;
+           border-radius:8px;
+           font-size: 14px;
+           font-weight: 500;
+           transition: all 0.2s ease;
+        }
+
+        .sidebar a:hover {
+        background:#1e293b;
+        color:white; /* Highlights on hover */
+        padding-left: 18px; /* Stylish slide effect */
+        }
+
+    /* Content */
+    .content {
+        margin-left:250px;
+        padding:30px;
+    }
+
+    /* Card */
+    /* Sophisticated Stat Cards */
+.card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+    padding: 24px;
+    margin: 12px;
+    display: inline-block;
+    min-width: 260px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); /* Softer shadow */
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px); /* Lift effect on hover */
+}
+
+/* Stylish card headers (The text inside cards) */
+.card h4 {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.card h2 {
+    color: var(--primary-navy); /* Deep navy stylish numbers */
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+    /* Form */
+    form {
+        background:white;
+        padding:20px;
+        border-radius:10px;
+        box-shadow:0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    form input, form select {
+        padding:10px;
+        margin:8px;
+        border:1px solid #ccc;
+        border-radius:6px;
+    }
+
+    button {
+        padding:10px 15px;
+        background:#3b82f6;
+        color:white;
+        border:none;
+        border-radius:6px;
+        cursor:pointer;
+    }
+
+    button:hover {
+        background:#2563eb;
+    }
+
+    /* ✅ UPDATED TABLE STYLING FOR ROWS AND COLUMNS */
+    .table-container {
+        width: 100%;
+        overflow-x: auto;
+        margin-top: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse; /* This merges borders into single lines */
+        background: white;
+        table-layout: auto;
+    }
+
+    /* Column Lines: adding border to th and td */
+    .table th, .table td {
+        padding: 12px;
+        border: 1px solid #dee2e6; /* This creates the visible grid lines */
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .table th {
+        background: #0f172a;
+        color: white;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85em;
+    }
+
+    /* Row Stripes */
+    .table tr:nth-child(even) {
+        background-color: #f8fafc;
+    }
+
+    .table tr:hover {
+        background: #f1f5f9;
+    }
+
+    h2 {
+        margin-bottom:20px;
+    }
+    /* ... existing styles ... */
+
+    h2 {
+        margin-bottom:20px;
+    }
+
+    /* ✅ PASTE HERE: Login Styling */
+    .sidebar a[href="/logout"]:hover {
+        background: #dc2626 !important;
+    }
+</style>
+
+</style>
+</head>
+
+<body>
+
+<body>
+
+<div class="sidebar">
+    <h2 style="font-size:18px; line-height:1.3; color: #94a3b8;"> 🦷 <span style="color: #f1f5f9;">Dr. Geethika's</span><br>
+    <span style="font-size:14px; color:#38bdf8; font-weight:600;">Pearl32 Dental Care</span>
+    </h2>
+    {% if current_user.is_authenticated %}
+        <a href="/">Dashboard</a>
+        <a href="/doctors">Doctors</a>
+        <a href="/patients">Patients</a>
+        <a href="/appointments">Appointments</a>
+        <a href="/treatments">Treatments</a>
+        <a href="/inventory">Inventory</a>
+
+        {% if current_user.role == 'admin' %}
+            <div style="border-top: 1px solid #334155; margin: 15px 0; padding-top: 15px;">
+                <p style="font-size: 11px; color: #64748b; margin-left: 12px;">ADMIN ONLY</p>
+                <a href="/billing">Billing</a>
+                <a href="/income">Income</a>
+                <a href="/expenses">Expenses</a>     
+                <a href="/expense_analysis">Expense Analysis</a>
+            </div>
+        {% endif %}
+
+        <div style="position: absolute; bottom: 20px; width: 190px;">
+            <p style="font-size: 11px; color: #64748b; margin-left: 12px;">
+                User: {{ current_user.username }}
+            </p>
+            <a href="/logout" style="background: #ef4444; color: white;">Logout</a>
+        </div>
+    {% else %}
+        <a href="/login">Login to System</a>
+    {% endif %}
+</div>
+
+<!-- ✅ THIS WAS MISSING -->
+<div class="content">
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+
+</body>
+</html>

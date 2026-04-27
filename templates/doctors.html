@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <div>
+        <h2 style="color: var(--primary-navy); margin: 0; font-weight: 700;">Doctor Management</h2>
+        <p style="color: var(--text-muted); margin: 5px 0 0 0; font-size: 0.9rem;">Manage clinical staff and specializations</p>
+    </div>
+</div>
+
+<div class="card" style="display: block; width: 100%; max-width: 800px; margin: 0 0 30px 0;">
+    <h4 style="margin-bottom: 20px;">Register New Doctor</h4>
+    <form method="POST" style="background: transparent; box-shadow: none; padding: 0; display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+        <input name="name" placeholder="Full Name" required style="flex: 1; min-width: 200px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <input name="specialization" placeholder="Specialization (e.g. Orthodontist)" style="flex: 1; min-width: 200px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <button type="submit" style="background: var(--accent-blue); padding: 12px 25px; font-weight: 600;">Add to Staff</button>
+    </form>
+</div>
+
+<div class="card" style="display: block; width: 100%; max-width: 800px; margin: 0 0 20px 0; padding: 15px 24px;">
+    <div style="display:flex; gap:12px; align-items:center; flex-wrap: wrap;">
+        <div style="position: relative; flex: 1; min-width: 250px;">
+            <input 
+                type="text" 
+                id="search" 
+                placeholder="Search by name or specialization..."
+                style="width: 100%; padding: 10px 15px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;"
+            >
+        </div>
+        <button onclick="searchTable()" style="background: var(--primary-navy);">Search</button>
+        <button onclick="resetSearch()" style="background: #64748b;">Reset</button>
+        <button onclick="deleteDoctor()" style="background: #ef4444; margin-left: auto;">
+            Delete Selected
+        </button>
+    </div>
+</div>
+
+<div class="table-container" style="background: var(--card-bg); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.5);">
+    <table class="table" id="doctorTable">
+        <thead>
+            <tr>
+                <th style="width: 100px;">Staff ID</th>
+                <th>Doctor Name</th>
+                <th>Clinical Specialization</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in rows %}
+            <tr onclick="selectRow(this, '{{ r.id }}')" style="cursor:pointer;">
+                <td style="font-weight: 600; color: var(--accent-blue);">#{{ r.id }}</td>
+                <td style="font-weight: 500; color: var(--primary-navy);">{{ r.name }}</td>
+                <td>
+                    <span style="background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                        {{ r.specialization or 'General Practice' }}
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+// --- INTERNAL FUNCTIONS REMAIN UNTOUCHED ---
+let selectedDoctor = null;
+
+function selectRow(row, id) {
+    document.querySelectorAll("#doctorTable tr").forEach(r => {
+        r.style.backgroundColor = "";
+        r.style.boxShadow = "none";
+    });
+
+    row.style.backgroundColor = "#f1f5f9"; // Soft Slate highlight
+    row.style.boxShadow = "inset 4px 0 0 var(--accent-blue)"; // Stylish left border highlight
+    selectedDoctor = id;
+}
+
+function deleteDoctor() {
+    if (!selectedDoctor) {
+        alert("Please select a doctor from the list first.");
+        return;
+    }
+
+    if (confirm("Are you sure you want to remove this doctor from Pearl32 staff?")) {
+        window.location.href = "/delete_doctor/" + selectedDoctor;
+    }
+}
+
+function searchTable() {
+    let input = document.getElementById("search").value.toLowerCase();
+    let rows = document.querySelectorAll("#doctorTable tbody tr");
+
+    rows.forEach((row) => {
+        let text = row.innerText.toLowerCase();
+        row.style.display = (input === "" || text.includes(input)) ? "" : "none";
+    });
+}
+
+function resetSearch() {
+    document.getElementById("search").value = "";
+    searchTable();
+}
+</script>
+
+{% endblock %}

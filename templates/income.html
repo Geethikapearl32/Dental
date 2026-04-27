@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Doctor Income & Settlements</h2>
+
+<div class="card" style="display: block; width: 100%; margin-bottom: 30px;">
+    <h4>Record End-of-Day Cut</h4>
+    <form action="/add_settlement" method="POST" style="box-shadow: none; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+        <div>
+            <label>Select Doctor</label><br>
+            <select name="doctor_id" required style="margin: 0; min-width: 150px;">
+                {% for d in doctors %}
+                <option value="{{ d.id }}">{{ d.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label>Cut Amount (₹)</label><br>
+            <input type="number" name="amount" required placeholder="0" style="margin: 0;">
+        </div>
+        <div>
+            <label>Date</label><br>
+            <input type="date" name="date" value="{{ today_date }}" style="margin: 0;">
+        </div>
+        <div>
+            <label>Note (Optional)</label><br>
+            <input type="text" name="note" placeholder="Daily settlement" style="margin: 0;">
+        </div>
+        <button type="submit" style="margin: 0;">Record Settlement</button>
+    </form>
+</div>
+
+<div class="table-container">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Doctor Name</th>
+                <th>Specialization</th>
+                <th>Total Revenue Generated</th>
+                <th>Total Cuts Reduced</th>
+                <th>Net Clinic Profit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td>{{ row.name }}</td>
+                <td>{{ row.specialization }}</td>
+                <td>₹{{ row.revenue }}</td>
+                <td style="color: #ef4444;">- ₹{{ row.cut }}</td>
+                <td style="font-weight: 600; color: #10b981;">₹{{ row.net }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

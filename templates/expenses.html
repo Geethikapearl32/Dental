@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Match Patient Tab Styling */
+    .entry-card { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 20px; }
+    .form-grid { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-size: 0.8em; font-weight: bold; color: #555; }
+    .form-group input, .form-group select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    
+    .table-container { background: white; border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6; }
+    .table-header { background: #1a237e; color: white; padding: 10px 15px; font-weight: bold; }
+    
+    #expenseTable { width: 100%; border-collapse: collapse; font-size: 0.95em; }
+    #expenseTable th, #expenseTable td { padding: 10px; border: 1px solid #dee2e6; text-align: left; }
+    #expenseTable thead tr { background: #f1f3f5; }
+    
+    .btn-action { border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+    .btn-action:hover { opacity: 0.9; }
+
+    /* Layout Wrapper */
+    .layout-wrapper { display: flex; gap: 20px; align-items: flex-start; width: 100%; }
+    .main-table-area { flex: 2; min-width: 0; }
+    
+    /* Sort Button Styling */
+    .sort-btn {
+        background: #f1f3f5; border: 1px solid #ccc; padding: 4px 12px; border-radius: 4px;
+        font-size: 0.85em; cursor: pointer; color: #000000 !important; font-weight: 600;
+    }
+</style>
+
+<h2>Expense Management</h2>
+
+<div class="entry-card">
+    <small><b>+ Add New Expense</b></small>
+    <form method="POST" class="form-grid">
+        <div class="form-group">
+            <label>Date</label>
+            <input name="date" type="date" id="expDefaultDate" required style="width: 140px;">
+        </div>
+        <div class="form-group">
+            <label>Type</label>
+            <select name="type" required style="width: 180px;">
+                <option value="Rent">Rent</option>
+                <option value="Electricity">Electricity</option>
+                <option value="Salary">Salary</option>
+                <option value="Dental materials">Dental materials</option>
+                <option value="Petrol">Petrol</option>
+                <option value="Water">Water</option>
+                <option value="Miscs">Miscs</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Amount</label>
+            <input name="amount" type="number" required style="width: 120px;">
+        </div>
+        <div class="form-group">
+            <label>Mode</label>
+            <select name="mode" style="width: 110px;">
+                <option value="cash">Cash</option>
+                <option value="online">Online</option>
+            </select>
+        </div>
+        <button type="submit" class="btn-action" style="background: #28a745; color: white;">Add Expense</button>
+    </form>
+</div>
+
+<div class="layout-wrapper">
+    <div class="main-table-area">
+        <div style="margin-bottom: 15px; display:flex; gap:10px; align-items:center;">
+            <small><b>Filter Date:</b></small>
+            <form method="GET" style="display: flex; gap: 10px; align-items: center;">
+                <input type="date" name="start_date" value="{{ start_date }}" style="padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 0.85em;">
+                <input type="date" name="end_date" value="{{ end_date }}" style="padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 0.85em;">
+                <button type="submit" class="sort-btn" style="background: #1a237e; color: white !important;">Apply</button>
+                <a href="/expenses" class="sort-btn">Clear</a>
+            </form>
+        </div>
+
+        <div style="margin-bottom: 10px; display:flex; gap:8px;">
+            <input type="text" id="expSearch" placeholder="Search expenses..." onkeyup="searchExp()" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
+            <button onclick="deleteExp()" class="btn-action" style="background:#dc3545; color:white;">Delete Selected</button>
+        </div>
+
+        <div class="table-container">
+            <div class="table-header">Expense Records</div>
+            <table id="expenseTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Mode</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rows %}
+                    <tr onclick="selectExp(this, '{{ r.id }}')" style="cursor:pointer;">
+                        <td>{{ r.date }}</td>
+                        <td style="font-weight: bold;">{{ r.type }}</td>
+                        <td style="color: #d32f2f; font-weight: bold;">₹{{ r.amount }}</td>
+                        <td><small>{{ r.mode|upper }}</small></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function formatDate(s) {
+    if (!s || !s.includes('-')) return s;
+    const p = s.split('-');
+    return `${p[2]}-${p[1]}-${p[0]}`;
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const dInput = document.getElementById('expDefaultDate');
+    if(!dInput.value) dInput.valueAsDate = new Date();
+
+    document.querySelectorAll("#expenseTable tbody tr").forEach(row => {
+        row.cells[0].innerText = formatDate(row.cells[0].innerText);
+    });
+});
+
+let selExpId = null;
+function selectExp(row, id) {
+    document.querySelectorAll("#expenseTable tbody tr").forEach(r => r.style.backgroundColor = "");
+    row.style.backgroundColor = "#d1e7ff";
+    selExpId = id;
+}
+
+function searchExp() {
+    let input = document.getElementById("expSearch").value.toLowerCase();
+    document.querySelectorAll("#expenseTable tbody tr").forEach(row => { 
+        row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none"; 
+    });
+}
+
+function deleteExp() {
+    if (!selExpId) return alert("Select an expense first!");
+    if (confirm("Delete this expense?")) window.location.href = "/delete_expense/" + selExpId;
+}
+</script>
+{% endblock %}
