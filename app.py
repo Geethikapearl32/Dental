@@ -290,7 +290,8 @@ def inventory():  # <--- Make sure this name 'inventory' is unique in the file
     if request.method == "POST":
         name = request.form.get("item_name")
         unit = request.form.get("unit")
-        qty = request.form.get("quantity")
+        qty = int(request.form.get("quantity") or 0)
+        min_lvl = int(request.form.get("min_level") or 0)
         min_lvl = request.form.get("min_level")
         notes = request.form.get("notes")
         
