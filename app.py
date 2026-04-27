@@ -282,7 +282,7 @@ def delete_expense(id):
     
 # ================= INVENTORY ROUTES =================
 
-@@app.route("/inventory")
+@app.route("/inventory")
 def inventory():
     return render_template("inventory.html", items=[], low_stock=[])
     conn = db()
