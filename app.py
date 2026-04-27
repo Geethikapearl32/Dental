@@ -283,34 +283,42 @@ def delete_expense(id):
 # ================= INVENTORY ROUTES =================
 
 @app.route("/inventory", methods=["GET", "POST"])
-def inventory():  # <--- Make sure this name 'inventory' is unique in the file
+def inventory():
     conn = db()
     cur = conn.cursor()
-    
+
     if request.method == "POST":
         name = request.form.get("item_name")
         unit = request.form.get("unit")
         qty = int(request.form.get("quantity") or 0)
         min_lvl = int(request.form.get("min_level") or 0)
-        min_lvl = request.form.get("min_level")
         notes = request.form.get("notes")
-        
+
         if name:
-            cur.execute("INSERT INTO inventory (item_name, unit, quantity, min_level, notes) VALUES (?,?,?,?,?)",
-                        (name, unit, qty, min_lvl, notes))
+            cur.execute(
+                "INSERT INTO inventory (item_name, unit, quantity, min_level, notes) VALUES (?,?,?,?,?)",
+                (name, unit, qty, min_lvl, notes)
+            )
             conn.commit()
             conn.close()
             return redirect("/inventory")
 
     rows_raw = cur.execute("SELECT * FROM inventory ORDER BY item_name ASC").fetchall()
     items = [dict(r) for r in rows_raw]
-    
-    # Check for items below minimum level
-    low_stock = [i for i in items if int(i['quantity'] or 0) <= int(i['min_level'] or 0)]
-    
+
+    # ✅ SAFE conversion (VERY IMPORTANT)
+    for i in items:
+        try:
+            i['quantity'] = int(i['quantity']) if i['quantity'] else 0
+            i['min_level'] = int(i['min_level']) if i['min_level'] else 0
+        except:
+            i['quantity'] = 0
+            i['min_level'] = 0
+
+    low_stock = [i for i in items if i['quantity'] <= i['min_level']]
+
     conn.close()
     return render_template("inventory.html", items=items, low_stock=low_stock)
-
 @app.route("/update_stock/<int:id>", methods=["POST"])
 def update_stock(id):
     new_qty = request.form.get("quantity")
