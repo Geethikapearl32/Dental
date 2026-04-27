@@ -39,7 +39,7 @@
         </thead>
         <tbody>
             {% for item in items %}
-            <tr style="{{ 'background-color: #fff1f2;' if item.quantity <= item.min_level else '' }}">
+            <tr style="{{ 'background-color: #fff1f2;' if (item.quantity|int) <= (item.min_level|int) else '' }}">
                 <td>{{ loop.index }}</td>
                 <td>{{ item.item_name }}</td>
                 <td>{{ item.unit }}</td>
